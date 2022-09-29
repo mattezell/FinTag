@@ -1,0 +1,123 @@
+﻿@page "/transactions"
+
+<PageTitle>Categorize Transactions</PageTitle>
+
+<h1>Transactions</h1>
+
+
+<Modal @ref="modalRef">
+    <ModalContent Centered>
+        @if (activeTransaction != null)
+        {
+            <ModalHeader>
+                <ModalTitle>Confirm Category?</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+                <p>Confirm @activeTransaction.Name as @activeTransaction.Type?</p>
+                <p class="text-danger"><strong>Note: Once confirmed, the transaction cannot be recategorized.</strong></p>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="@HideModal">No</Button>
+                <Button Color="Color.Primary" Clicked="@ProcessCategoryConfirmation">Yes</Button>
+            </ModalFooter>    
+        }
+        
+    </ModalContent>
+</Modal>
+
+<DropContainer TItem="Transaction" Items="@items" ItemsFilter="@((item, dropZone) => item.Type == dropZone)" ItemDropped="@ItemDropped" Flex="Flex.Wrap.Grow.Is1">
+    <ChildContent>
+        <DropZone TItem="Transaction" Name="None" DropAllowed="@((item) => !item.Confirmed)" Border="Border.Rounded" Background="Background.Light" Padding="Padding.Is3" Margin="Margin.Is3" Flex="Flex.Grow.Is1">
+            <Heading Size="HeadingSize.Is4" Margin="Margin.Is3.FromBottom">Uncategorized</Heading>
+        </DropZone>
+        <DropZone TItem="Transaction" Name="Goods" DropAllowed="@((item) => !item.Confirmed)" ItemDisabled="@((item) => item.Confirmed)" Border="Border.Rounded" Background="Background.Light" Padding="Padding.Is3" Margin="Margin.Is3" Flex="Flex.Grow.Is1">
+            <Heading Size="HeadingSize.Is4" Margin="Margin.Is3.FromBottom">Goods</Heading>
+        </DropZone>
+        <DropZone TItem="Transaction" Name="Services" DropAllowed="@((item) => !item.Confirmed)" ItemDisabled="@((item) => item.Confirmed)" Border="Border.Rounded" Background="Background.Light" Padding="Padding.Is3" Margin="Margin.Is3" Flex="Flex.Grow.Is1">
+            <Heading Size="HeadingSize.Is4" Margin="Margin.Is3.FromBottom">Services</Heading>
+        </DropZone>
+    </ChildContent>
+    <ItemTemplate>
+        <Card Shadow="Shadow.Default" Margin="Margin.Is3.OnY">
+            <CardBody>
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is2">
+                        <Icon Name="@(@context.Icon)" />
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is8">
+                        @context.Name        
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is2">
+                        @if (@context.Confirmed)
+                        {
+                            <Icon Name="@("fa-check")" />
+                        } 
+                        else
+                        {
+                            <Icon Name="@("fa-question-circle")" />
+                        }
+                    </Column>
+                </Row>
+            </CardBody>
+        </Card>
+    </ItemTemplate>
+</DropContainer>
+
+@code{
+    
+    private Modal modalRef;
+
+    private Transaction activeTransaction;
+
+    private Task ShowModal()
+    {
+        return modalRef.Show();
+    }
+
+    private Task HideModal()
+    {
+        return modalRef.Hide();
+        activeTransaction = null;
+    }
+
+    public class Transaction
+    {
+        public string Name { get; init; }
+
+        public string Type { get; set; }
+
+        public string Icon { get; set; }
+        
+        public bool Confirmed { get; set; }
+    }
+
+    private List<Transaction> items = new()
+    {
+        new Transaction() { Name = "Target", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "Maid, Inc.", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "Ticketmaster", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "District Brewing", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "Costco", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "Wayne's Landscaping", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+        new Transaction() { Name = "Fitness4Life", Type = "None", Icon = "fa-credit-card", Confirmed = false },
+    };
+
+    private void ItemDropped( DraggableDroppedEventArgs<Transaction> transaction )
+    {
+        activeTransaction = transaction.Item;
+        activeTransaction.Type = transaction.DropZoneName;
+        activeTransaction.Icon = transaction.DropZoneName == "Goods" ? "fa-shopping-cart" : "fa-hands-helping";
+        
+        if ( activeTransaction.Type != "None" )
+        {
+            ShowModal();
+        }
+        
+    }
+
+    private void ProcessCategoryConfirmation()
+    {
+        activeTransaction.Confirmed = true;
+        HideModal();
+    }
+}
